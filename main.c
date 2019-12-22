@@ -16,8 +16,22 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
-#include <windows.h>
+#ifdef _WIN32
+  #include <windows.h>
+#else
+  #include <limits.h>
+  #include <string.h>
+#endif
 #include "des.h"
+
+/* hacky linux stuff */
+int getPathMax() {
+  #ifdef _WIN32
+    return MAX_PATH;
+  #else
+    return PATH_MAX;
+  #endif
+}
 
 /* All the Triforce DES Keys I know */
 #define KEYS_AVAIL 12
@@ -81,13 +95,19 @@ int main(int argc, char *argv[])
 	FILE *f = NULL;
 	int created_tmp = 0;
 	int has_basepath = 0;
+  int MAX_PATH = getPathMax();
 	char exebasepath[MAX_PATH], gamebasepath[MAX_PATH], tmppath[MAX_PATH];
-	//windows exec path is so ugly to get
-	GetModuleFileName(NULL, exebasepath, MAX_PATH);
-	if(strchr(exebasepath,'\\') != NULL)
-		*strrchr(exebasepath,'\\') = '\0';
+  #ifdef _WIN32
+	  //windows exec path is so ugly to get
+    GetModuleFileName(NULL, exebasepath, MAX_PATH);
+  #else
+    getcwd(exebasepath, MAX_PATH);
+  #endif
+	if(strchr(exebasepath,'\\') != NULL) {
+	  *strrchr(exebasepath,'\\') = '\0';
+  } 
 	//lets actually do cool stuff
-	puts("Triforce ISO Extract v1.4 by FIX94");
+	puts("Triforce ISO Extract v1.4[kam0de] by FIX94");
 	if(argc != 2)
 	{
 		puts("No input file!");
@@ -107,18 +127,30 @@ int main(int argc, char *argv[])
 		char systemcmd[2048];
 		if(has_basepath)
 		{
+		  printf("Found basepath: %s", gamebasepath);
 			sprintf(tmppath, "%s\\tmp", gamebasepath);
-			mkdir(tmppath);
-			sprintf(systemcmd,"\"\"%s\\chdman.exe\" extractraw -i \"%s\" -o \"%s\\tmp\\raw.bin\"\"", exebasepath, argv[1], gamebasepath);
+      #ifdef _WIN32
+			  mkdir(tmppath);
+        sprintf(systemcmd,"\"\"%s\\chdman.exe\" extractraw -i \"%s\" -o \"%s\\tmp\\raw.bin\"\"", exebasepath, argv[1], gamebasepath);
+      #else
+        mkdir(tmppath, 0777);
+        sprintf(systemcmd,"\"\"%s/chdman\" extractraw -i \"%s\" -o \"%s\\tmp\\raw.bin\"\"", exebasepath, argv[1], gamebasepath);
+      #endif
 			system(systemcmd);
 			sprintf(tmppath, "%s\\tmp\\raw.bin", gamebasepath);
 			f = fopen(tmppath, "rb");
 		}
 		else
 		{
-			mkdir("tmp");
-			sprintf(systemcmd,"\"\"%s\\chdman.exe\" extractraw -i \"%s\" -o tmp/raw.bin\"", exebasepath, argv[1]);
-			system(systemcmd);
+		  puts("No basepath found, using current dir");
+      #ifdef _WIN32
+			  mkdir("tmp");
+        sprintf(systemcmd,"\"\"%s\\chdman\" extractraw -i \"%s\" -o tmp/raw.bin\"", exebasepath, argv[1]);
+      #else
+        mkdir("tmp", 0777);
+        sprintf(systemcmd," \"%s/chdman\" extractraw -i \"%s\" -o tmp/raw.bin", exebasepath, argv[1]);
+      #endif
+      system(systemcmd);
 			f = fopen("tmp/raw.bin", "rb");
 		}
 		printf("\n");
@@ -346,7 +378,9 @@ end_prog:
 			rmdir("tmp");
 		}
 	}
-	puts("Press enter to exit");
-	getc(stdin);
+  #ifdef _WIN32
+	  puts("Press enter to exit");
+	  getc(stdin);
+  #endif
 	return 0;
 }

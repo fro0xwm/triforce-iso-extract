@@ -8,5 +8,11 @@ GDT-0001, GDT-0002, GDT-0004, GDT-0005, GDT-0006, GDT-0008, GDT-0009, GDT-0010, 
 
 
 # Manual Compiling
-As of right now this is a windows only code. If you have MinGW installed and gcc referenced in your PATH variable just use the "build.bat".  
+~~As of right now this is a windows only code~~. 
+
+## windows
+If you have MinGW installed and gcc referenced in your PATH variable just use the "build.bat".  
 Support for other OSes might follow in the future.
+
+## linux
+run build.sh, same chdman rules apply (see Usage) but get a linux version of chdman
